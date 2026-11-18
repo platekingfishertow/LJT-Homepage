@@ -59,8 +59,10 @@ jobs:
 
           grep -Fq 'Preprints' _site/publications/index.html
           grep -Fq 'Conference Papers' _site/publications/index.html
-          if grep -R -Fq 'Paper Title Number' _site; then
-            echo 'Template publication placeholder remains in generated site.'
+          matches=$(grep -R -l --include='*.html' -F 'Paper Title Number' _site || true)
+          if [ -n "$matches" ]; then
+            echo 'Template publication placeholder remains in generated HTML:'
+            echo "$matches"
             exit 1
           fi
           echo 'Content verification passed.'
