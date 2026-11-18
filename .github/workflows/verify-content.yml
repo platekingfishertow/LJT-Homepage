@@ -1,0 +1,66 @@
+name: Verify generated site content
+
+on:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1.328.0
+        with:
+          ruby-version: '3.1'
+          bundler-cache: true
+      - name: Build with Jekyll
+        run: bundle exec jekyll build --baseurl "/LJT-Homepage"
+        env:
+          JEKYLL_ENV: production
+      - name: Verify About and Publications output
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f _site/index.html
+          test -f _site/publications/index.html
+          test -f _site/cv/index.html
+
+          for term in \
+            'Junteng Liu' \
+            'First-year Ph.D. candidate' \
+            'HKUST NLP Group' \
+            'Shanghai Jiao Tong University' \
+            'MINIMAX' \
+            'Tencent WXG' \
+            'Shanghai AI Lab' \
+            'Zhiyuan Honor Scholarship' \
+            'SynLogic' \
+            'On the Perception Bottleneck of VLMs for Chart Understanding' \
+            'On the Universal Truthfulness Hyperplane Inside LLMs' \
+            'In-Context Sharpness as Alerts' \
+            'C-Eval' \
+            'Composing Parameter-Efficient Modules with Arithmetic Operations' \
+            'jliugi@connect.ust.hk' \
+            'Vicent0205' \
+            'junteng88716710'; do
+            grep -Fq "$term" _site/index.html || { echo "Missing on About: $term"; exit 1; }
+          done
+
+          for term in \
+            'SynLogic' \
+            'Perception Bottleneck' \
+            'Universal Truthfulness Hyperplane' \
+            'In-Context Sharpness' \
+            'C-Eval' \
+            'Composing Parameter-Efficient Modules'; do
+            grep -Fq "$term" _site/publications/index.html || { echo "Missing on Publications page: $term"; exit 1; }
+          done
+
+          grep -Fq 'Preprints' _site/publications/index.html
+          grep -Fq 'Conference Papers' _site/publications/index.html
+          if grep -R -Fq 'Paper Title Number' _site; then
+            echo 'Template publication placeholder remains in generated site.'
+            exit 1
+          fi
+          echo 'Content verification passed.'
